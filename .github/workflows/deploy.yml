@@ -30,7 +30,7 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: "caldav2ics"
-          entrypoint: "main.ts"
+          entrypoint: "src/main.ts"
           root: "."
           
           
