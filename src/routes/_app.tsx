@@ -31,7 +31,7 @@ export default function App({ Component }: PageProps) {
             {config.appName}
           </a>
           <a
-            href="https://github.com/tonrepo" // ← à adapter
+            href="https://github.com/lsagetlethias/caldav2ics"
             target="_blank"
             class="text-sm text-gray-500 hover:underline"
           >
@@ -50,7 +50,7 @@ export default function App({ Component }: PageProps) {
           — Outil libre pour synchronisation CalDAV → ICS
           <span class="ml-2">
             <a
-              href="https://github.com/tonrepo" // ← idem ici
+              href="https://github.com/lsagetlethias/caldav2ics"
               class="hover:underline"
               target="_blank"
             >
