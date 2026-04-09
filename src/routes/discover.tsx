@@ -12,7 +12,6 @@ interface DiscoverPageProps {
 
 export const handler: Handlers<DiscoverPageProps> = {
   async POST(req, ctx) {
-    console.log("POST /discover");
     // get login, password, caldav_url from form data
     const form = await req.formData();
     const login = form.get("login")?.toString();
@@ -43,7 +42,6 @@ export const handler: Handlers<DiscoverPageProps> = {
     }
   },
   GET() {
-    console.log("GET /discover");
     // redirect to the home page
     return new Response("", {
       status: 302,

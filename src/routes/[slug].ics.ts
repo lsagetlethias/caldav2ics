@@ -9,11 +9,8 @@ export const handler = {
     const url = new URL(req.url);
     const slug = url.pathname.slice(1).replace(/\.ics$/, "");
 
-    console.log({ slug });
-
     try {
       const rawCaldavUrl = await decrypt(slug);
-      console.log("URL CalDAV déchiffrée :", rawCaldavUrl);
 
       const url = new URL(rawCaldavUrl);
       const ics = await caldavUrl2icsService(url);
