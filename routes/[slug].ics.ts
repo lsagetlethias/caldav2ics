@@ -1,6 +1,3 @@
-// import { decryptSlug } from "../utils/slug.ts";
-// import { generateIcsFromCalDavUrl } from "../services/caldav2icsService.ts"; // ton service habituel
-
 import { type Context } from "fresh";
 
 import { caldavUrl2icsService } from "../services/caldavUrl2icsService.ts";
