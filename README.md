@@ -3,7 +3,7 @@
 Convertisseur CalDAV → ICS sécurisé et sans stockage, déployé sur
 [Deno Deploy](https://deno.com/deploy)
 
-![Logo caldav2ics](./src/static/logo.svg)
+![Logo caldav2ics](./static/logo.svg)
 
 ## 🚀 À propos
 
@@ -24,13 +24,13 @@ lisible publiquement.
 - ⚙️ Compatible avec tous les serveurs CalDAV (Nextcloud, Zimbra, Baïkal…)
 - 🧩 Formulaire de découverte automatique des calendriers disponibles
 - 🎨 Interface légère (Fresh + Tailwind CSS)
-- 🗂️ Slug chiffré dans l’URL : `http://localhost:8000/<slug>.ics`
+- 🗂️ Slug chiffré dans l’URL : `https://<hôte>/<slug>.ics`
 
 ---
 
 ## 🧪 Exemple
 
-> `http://localhost:8000/u4BdpxTSKZWhEZgU1rDyb7O2iqcWF-ZZFnE0ugHvm2c.ics`
+> `https://caldav2ics.lsagetlethias.deno.net/u4BdpxTSKZWhEZgU1rDyb7O2iqcWF-ZZFnE0ugHvm2c.ics`
 
 Ce lien est :
 
@@ -43,9 +43,9 @@ Ce lien est :
 ## 🔧 Installation locale
 
 ```bash
-deno task dev
-# ou
-deno run -A main.ts
+deno task dev      # serveur de dev Vite (http://localhost:5173)
+deno task build    # build de production
+deno task start    # sert le build (http://localhost:8000)
 ```
 
 ---
@@ -55,7 +55,7 @@ deno run -A main.ts
 Les identifiants CalDAV sont :
 
 1. concaténés à l’URL
-2. compressés avec GZIP (via WebAssembly)
+2. compressés avec GZIP (via `CompressionStream`)
 3. chiffrés avec AES-GCM (clé dérivée via PBKDF2 + salt)
 4. encodés en base64url
 

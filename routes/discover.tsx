@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from "$fresh/server.ts";
+import { type Context, type PageProps } from "fresh";
 import CopyButton from "../islands/CopyButton.tsx";
 import {
   caldav2icsDiscoveryService,
@@ -10,21 +10,21 @@ interface DiscoverPageProps {
   error?: string;
 }
 
-export const handler: Handlers<DiscoverPageProps> = {
-  async POST(req, ctx) {
+export const handler = {
+  async POST(ctx: Context<unknown>) {
     // get login, password, caldav_url from form data
-    const form = await req.formData();
+    const form = await ctx.req.formData();
     const login = form.get("login")?.toString();
     const password = form.get("password")?.toString();
     const caldavUrl = form.get("caldav_url")?.toString();
     if (!login || !password || !caldavUrl) {
-      return ctx.render({ icsLinks: [], error: "Paramètres manquants." });
+      return { data: { icsLinks: [], error: "Paramètres manquants." } };
     }
 
     try {
       new URL(caldavUrl);
     } catch {
-      return ctx.render({ icsLinks: [], error: "URL CalDAV invalide." });
+      return { data: { icsLinks: [], error: "URL CalDAV invalide." } };
     }
 
     try {
@@ -33,12 +33,14 @@ export const handler: Handlers<DiscoverPageProps> = {
       url.password = password;
 
       const icsLinks = await caldav2icsDiscoveryService(url);
-      return ctx.render({ icsLinks });
+      return { data: { icsLinks } };
     } catch (err) {
-      return ctx.render({
-        icsLinks: [],
-        error: err instanceof Error ? err.message : "Erreur inconnue.",
-      });
+      return {
+        data: {
+          icsLinks: [],
+          error: err instanceof Error ? err.message : "Erreur inconnue.",
+        },
+      };
     }
   },
   GET() {
@@ -86,7 +88,7 @@ export default function DiscoverPage({ data }: PageProps<DiscoverPageProps>) {
             </h2>
             <ul class="space-y-4">
               {data.icsLinks.map((link) => (
-                <li class="border p-4 rounded-md bg-gray-50">
+                <li class="border border-gray-200 p-4 rounded-md bg-gray-50">
                   <p class="font-semibold text-gray-800">{link.calendar}</p>
                   <p class="text-sm text-gray-600 mb-2">
                     {link.count} événement(s)
@@ -96,7 +98,7 @@ export default function DiscoverPage({ data }: PageProps<DiscoverPageProps>) {
                       type="text"
                       readOnly
                       value={link.ics}
-                      class="flex-1 px-2 py-1 border rounded-md text-sm text-gray-700"
+                      class="flex-1 px-2 py-1 border border-gray-200 rounded-md text-sm text-gray-700"
                     />
                     <CopyButton text={link.ics} />
                   </div>

@@ -1,7 +1,6 @@
-import { PageProps } from "$fresh/server.ts";
 import { config } from "../config.ts";
 
-export default function DiscoverPage(props: PageProps) {
+export default function HomePage() {
   return (
     <section class="grid md:grid-cols-2 gap-12 items-center">
       {/* Texte de présentation */}
@@ -39,8 +38,8 @@ export default function DiscoverPage(props: PageProps) {
               type="text"
               name="login"
               required
-              class="w-full mt-1 px-4 py-2 border rounded-md"
-              value={props.config.dev ? config.defaultUser : ""}
+              class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-md"
+              value={import.meta.env.DEV ? config.defaultUser : ""}
             />
           </div>
 
@@ -52,8 +51,8 @@ export default function DiscoverPage(props: PageProps) {
               type="password"
               name="password"
               required
-              class="w-full mt-1 px-4 py-2 border rounded-md"
-              value={props.config.dev ? config.defaultPassword : ""}
+              class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-md"
+              value={import.meta.env.DEV ? config.defaultPassword : ""}
             />
           </div>
 
@@ -66,14 +65,14 @@ export default function DiscoverPage(props: PageProps) {
               name="caldav_url"
               required
               placeholder={config.caldavUrlPlaceholder}
-              class="w-full mt-1 px-4 py-2 border rounded-md"
-              value={props.config.dev ? config.defaultCaldavUrl : ""}
+              class="w-full mt-1 px-4 py-2 border border-gray-200 rounded-md"
+              value={import.meta.env.DEV ? config.defaultCaldavUrl : ""}
             />
           </div>
 
           <button
             type="submit"
-            class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition cursor-pointer"
           >
             Découvrir mes calendriers
           </button>

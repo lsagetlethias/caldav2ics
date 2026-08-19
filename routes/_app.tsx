@@ -1,4 +1,4 @@
-import { type PageProps } from "$fresh/server.ts";
+import { type PageProps } from "fresh";
 import { config } from "../config.ts";
 
 export default function App({ Component }: PageProps) {
@@ -13,12 +13,11 @@ export default function App({ Component }: PageProps) {
           {config.appName} - Générateur ICS sécurisé à partir de CalDAV
         </title>
         <link rel="icon" href="/logo.svg" />
-        <link rel="stylesheet" href="/styles.css" />
       </head>
 
       <body class="min-h-screen flex flex-col bg-blue-50 text-gray-900">
         {/* Header */}
-        <header class="flex items-center justify-between px-6 py-4 border-b bg-white shadow-sm">
+        <header class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-xs">
           <a
             href="/"
             class="flex items-center gap-2 text-blue-600 font-bold text-xl hover:underline"
@@ -40,12 +39,12 @@ export default function App({ Component }: PageProps) {
         </header>
 
         {/* Main */}
-        <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-12 md:py-20">
+        <main class="grow max-w-7xl mx-auto w-full px-4 py-12 md:py-20">
           <Component />
         </main>
 
         {/* Footer */}
-        <footer class="mt-auto py-4 text-center text-sm text-gray-500 border-t bg-white">
+        <footer class="mt-auto py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-white">
           © {currentYear} {config.appName}{" "}
           — Outil libre pour synchronisation CalDAV → ICS
           <span class="ml-2">

@@ -1,8 +1,34 @@
-import { gzipDecode, gzipEncode } from "https://deno.land/x/wasm_gzip/mod.ts";
 import { config } from "../config.ts";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+
+async function pipeThrough(
+  data: Uint8Array<ArrayBuffer>,
+  transform: CompressionStream | DecompressionStream,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const input = new ReadableStream<BufferSource>({
+    start(controller) {
+      controller.enqueue(data);
+      controller.close();
+    },
+  });
+  return new Uint8Array(
+    await new Response(input.pipeThrough(transform)).arrayBuffer(),
+  );
+}
+
+function gzipEncode(
+  data: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
+  return pipeThrough(data, new CompressionStream("gzip"));
+}
+
+function gzipDecode(
+  data: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
+  return pipeThrough(data, new DecompressionStream("gzip"));
+}
 
 function fromBase64Url(base64url: string): Uint8Array {
   const base64 = base64url
