@@ -59,9 +59,10 @@ async function discoverCalendars(
 
 export async function caldav2icsDiscoveryService(
   userURL: URL,
+  host: string,
 ): Promise<IcsLink[]> {
   const parsed = new URL(userURL);
-  const baseUrl = `${parsed.protocol}//${parsed.hostname}`;
+  const baseUrl = `${parsed.protocol}//${parsed.host}`;
   const headers = parsed.username && parsed.password
     ? buildAuthHeaders(parsed.username, parsed.password)
     : {};
@@ -110,7 +111,7 @@ export async function caldav2icsDiscoveryService(
 
     icsLinks.push({
       calendar: cal.displayName || cal.href,
-      ics: `${config.host}/${slug}.ics`,
+      ics: `${host}/${slug}.ics`,
       count: eventCount,
     });
   }

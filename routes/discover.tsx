@@ -1,4 +1,5 @@
 import { type Context, type PageProps } from "fresh";
+import { resolveHost } from "../config.ts";
 import CopyButton from "../islands/CopyButton.tsx";
 import {
   caldav2icsDiscoveryService,
@@ -32,7 +33,10 @@ export const handler = {
       url.username = login;
       url.password = password;
 
-      const icsLinks = await caldav2icsDiscoveryService(url);
+      const icsLinks = await caldav2icsDiscoveryService(
+        url,
+        resolveHost(ctx.url.origin),
+      );
       return { data: { icsLinks } };
     } catch (err) {
       return {

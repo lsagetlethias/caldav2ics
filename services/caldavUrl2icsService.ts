@@ -2,7 +2,7 @@ import { config } from "../config.ts";
 import { fetchCalDAVReport } from "../utils/caldav.ts";
 import { ensureUid, sanitizeText } from "../utils/ics.ts";
 
-export async function caldavUrl2icsService(url: URL) {
+export async function caldavUrl2icsService(url: URL, host: string) {
   const now = new Date();
   const start = new Date(now);
   start.setMonth(start.getMonth() - config.sinceMonths);
@@ -83,7 +83,7 @@ export async function caldavUrl2icsService(url: URL) {
 
   const metadata = [
     "VERSION:2.0",
-    `PRODID:-//${config.host}//EN`,
+    `PRODID:-//${host}//EN`,
     "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:${calendarName || "Calendrier"}`,
     "X-WR-TIMEZONE:Europe/Paris",

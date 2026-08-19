@@ -1,5 +1,7 @@
 import { type Context } from "fresh";
 
+import { resolveHost } from "../config.ts";
+
 import { caldavUrl2icsService } from "../services/caldavUrl2icsService.ts";
 import { decrypt } from "../utils/salt.ts";
 
@@ -11,7 +13,7 @@ export const handler = {
       const rawCaldavUrl = await decrypt(slug);
 
       const url = new URL(rawCaldavUrl);
-      const ics = await caldavUrl2icsService(url);
+      const ics = await caldavUrl2icsService(url, resolveHost(ctx.url.origin));
 
       return new Response(ics, {
         headers: {
