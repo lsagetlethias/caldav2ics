@@ -106,8 +106,16 @@ export default function DiscoverPage({ data }: PageProps<DiscoverPageProps>) {
                       </span>
                     )}
                   </p>
+                  {link.error && (
+                    <p class="text-sm text-red-600">
+                      {link.error}{" "}
+                      Le lien est généré, mais le flux risque d'échouer.
+                    </p>
+                  )}
                   <p class="text-sm text-gray-600 mb-2">
-                    {link.kind === "tasks"
+                    {link.error
+                      ? null
+                      : link.kind === "tasks"
                       ? "Liste de tâches : le flux ICS ne reprend que les événements, il restera vide."
                       : `${link.count} événement(s)`}
                   </p>

@@ -1,6 +1,7 @@
 import {
   basicAuth,
   buildPropfindXml,
+  CalDAVError,
   fetchCalDAVReport,
   parseDavXml,
   pickProp,
@@ -15,6 +16,7 @@ export interface IcsLink {
   ics: string;
   count: number;
   kind: CalendarKind;
+  error?: string;
 }
 
 interface CalendarInfo {
@@ -125,21 +127,30 @@ export async function caldav2icsDiscoveryService(
       `${dav.protocol}//${parsed.username}:${parsed.password}@${dav.host}${cal.href}`;
     const slug = await encrypt(fullUrl);
 
-    const responses = await fetchCalDAVReport(`${origin}${cal.href}`, {
-      headers,
-      start,
-      end,
-    });
-
-    const eventCount = responses.reduce((acc, r) => {
-      return acc + (r.calendarData?.match(/BEGIN:VEVENT/g)?.length || 0);
-    }, 0);
+    let eventCount = 0;
+    let error: string | undefined;
+    try {
+      const responses = await fetchCalDAVReport(`${origin}${cal.href}`, {
+        headers,
+        start,
+        end,
+      });
+      eventCount = responses.reduce((acc, r) => {
+        return acc + (r.calendarData?.match(/BEGIN:VEVENT/g)?.length || 0);
+      }, 0);
+    } catch (err) {
+      console.error(`REPORT en échec sur ${cal.href} :`, err);
+      error = err instanceof CalDAVError
+        ? `Lecture refusée par le serveur (${err.status}).`
+        : "Lecture impossible.";
+    }
 
     icsLinks.push({
       calendar: cal.displayName || cal.href,
       ics: `${host}/${slug}.ics`,
       count: eventCount,
       kind: cal.kind,
+      error,
     });
   }
 
