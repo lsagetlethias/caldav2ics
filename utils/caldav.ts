@@ -29,8 +29,16 @@ export function buildPropfindXml(): string {
   <D:prop>
     <D:displayname/>
     <D:resourcetype/>
+    <C:supported-calendar-component-set/>
   </D:prop>
 </D:propfind>`;
+}
+
+export class CalDAVError extends Error {
+  constructor(readonly status: number) {
+    super(`CalDAV REPORT failed (${status})`);
+    this.name = "CalDAVError";
+  }
 }
 
 export interface CalDAVResponse {
@@ -62,29 +70,22 @@ export async function fetchCalDAVReport(
   });
 
   if (!response.ok) {
-    throw new Error(`CalDAV REPORT failed (${response.status})`);
+    await response.body?.cancel();
+    throw new CalDAVError(response.status);
   }
 
   const rawXml = await response.text();
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: "@_",
-  });
-  const json = parser.parse(rawXml);
+  const json = parseDavXml(rawXml);
 
-  const responses = json["D:multistatus"]?.["D:response"] || [];
+  const responses = json.multistatus?.response || [];
   const responseArray = Array.isArray(responses) ? responses : [responses];
 
   return responseArray.map((entry): CalDAVResponse => {
-    const href = entry["D:href"];
-    const prop = Array.isArray(entry["D:propstat"])
-      ? entry["D:propstat"][0]?.["D:prop"]
-      : entry["D:propstat"]?.["D:prop"];
+    const href = entry.href;
+    const prop = pickProp(entry.propstat);
 
-    const displayName = prop?.["D:displayname"] || "";
-    const calendarData = prop?.["C:calendar-data"] ||
-      prop?.["calendar-data"] ||
-      prop?.["cal:calendar-data"];
+    const displayName = prop?.displayname || "";
+    const calendarData = prop?.["calendar-data"];
 
     const data = typeof calendarData === "string"
       ? calendarData
@@ -97,4 +98,22 @@ export async function fetchCalDAVReport(
       rawXml,
     };
   });
+}
+
+// deno-lint-ignore no-explicit-any
+export function parseDavXml(xml: string): any {
+  return new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+    removeNSPrefix: true,
+  }).parse(xml);
+}
+
+// Un serveur peut renvoyer plusieurs propstat (200 pour les props trouvées,
+// 404 pour les autres) : on garde celui en 200.
+// deno-lint-ignore no-explicit-any
+export function pickProp(propstat: any): any {
+  const list = Array.isArray(propstat) ? propstat : [propstat];
+  const ok = list.find((p) => / 200 /.test(String(p?.status ?? "")));
+  return (ok ?? list[0])?.prop;
 }

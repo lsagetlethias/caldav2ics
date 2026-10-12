@@ -1,12 +1,19 @@
-import { buildPropfindXml, fetchCalDAVReport } from "../utils/caldav.ts";
+import {
+  buildPropfindXml,
+  fetchCalDAVReport,
+  parseDavXml,
+  pickProp,
+} from "../utils/caldav.ts";
 import { encrypt } from "../utils/salt.ts";
 import { config } from "../config.ts";
-import { XMLParser } from "fast-xml-parser";
+
+export type CalendarKind = "events" | "tasks" | "unknown";
 
 export interface IcsLink {
   calendar: string;
   ics: string;
   count: number;
+  kind: CalendarKind;
 }
 
 function buildAuthHeaders(username: string, password: string): HeadersInit {
@@ -19,12 +26,24 @@ interface CalendarInfo {
   href: string;
   displayName: string;
   isCalendar: boolean;
+  kind: CalendarKind;
+}
+
+// deno-lint-ignore no-explicit-any
+function detectKind(componentSet: any): CalendarKind {
+  const comps = componentSet?.comp;
+  if (!comps) return "unknown";
+  const names = (Array.isArray(comps) ? comps : [comps])
+    .map((c) => String(c?.["@_name"] ?? "").toUpperCase());
+  if (names.includes("VEVENT")) return "events";
+  if (names.includes("VTODO")) return "tasks";
+  return "unknown";
 }
 
 async function discoverCalendars(
   baseUrl: string,
   headers: HeadersInit,
-): Promise<CalendarInfo[]> {
+): Promise<{ origin: string; calendars: CalendarInfo[] }> {
   const body = buildPropfindXml();
 
   const resp = await fetch(baseUrl, {
@@ -37,24 +56,35 @@ async function discoverCalendars(
     body,
   });
 
-  if (!resp.ok) return [];
+  if (!resp.ok) {
+    await resp.body?.cancel();
+    throw new Error(
+      resp.status === 401 || resp.status === 403
+        ? `Identifiants refusés par le serveur CalDAV (${resp.status}).`
+        : `Découverte CalDAV en échec (${resp.status}).`,
+    );
+  }
 
-  const xml = await resp.text();
-  const parser = new XMLParser({ ignoreAttributes: false });
-  const json = parser.parse(xml);
-  const responses = json["D:multistatus"]?.["D:response"] || [];
+  // Les href renvoyés sont relatifs à l'hôte final, qui peut différer de
+  // l'hôte saisi après les redirections .well-known.
+  const origin = new URL(resp.url).origin;
+  const json = parseDavXml(await resp.text());
+  const responses = json.multistatus?.response || [];
   const items = Array.isArray(responses) ? responses : [responses];
 
-  return items.map((item) => {
-    const href = item?.["D:href"];
-    const props = item?.["D:propstat"]?.["D:prop"];
-    const displayName = props?.["D:displayname"] || "";
-    const resType = props?.["D:resourcetype"];
+  const calendars = items.map((item) => {
+    const href = new URL(item?.href, origin).pathname;
+    const props = pickProp(item?.propstat);
+    const displayName = props?.displayname || "";
+    const resType = props?.resourcetype;
     const isCalendar = Object.keys(resType || {}).some((k) =>
       k.includes("calendar")
     );
-    return { href, displayName, isCalendar };
+    const kind = detectKind(props?.["supported-calendar-component-set"]);
+    return { href, displayName, isCalendar, kind };
   });
+
+  return { origin, calendars };
 }
 
 export async function caldav2icsDiscoveryService(
@@ -82,7 +112,8 @@ export async function caldav2icsDiscoveryService(
   }
 
   const redirectedTo = new URL(location, baseUrl).toString();
-  const calendars = await discoverCalendars(redirectedTo, headers);
+  const { origin, calendars } = await discoverCalendars(redirectedTo, headers);
+  const dav = new URL(origin);
 
   const now = new Date();
   const start = new Date(now);
@@ -96,10 +127,10 @@ export async function caldav2icsDiscoveryService(
     if (!cal.isCalendar) continue;
 
     const fullUrl =
-      `${parsed.protocol}//${parsed.username}:${parsed.password}@${parsed.host}${cal.href}`;
+      `${dav.protocol}//${parsed.username}:${parsed.password}@${dav.host}${cal.href}`;
     const slug = await encrypt(fullUrl);
 
-    const responses = await fetchCalDAVReport(`${baseUrl}${cal.href}`, {
+    const responses = await fetchCalDAVReport(`${origin}${cal.href}`, {
       headers,
       start,
       end,
@@ -113,6 +144,7 @@ export async function caldav2icsDiscoveryService(
       calendar: cal.displayName || cal.href,
       ics: `${host}/${slug}.ics`,
       count: eventCount,
+      kind: cal.kind,
     });
   }
 

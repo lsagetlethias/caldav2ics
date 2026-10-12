@@ -93,9 +93,23 @@ export default function DiscoverPage({ data }: PageProps<DiscoverPageProps>) {
             <ul class="space-y-4">
               {data.icsLinks.map((link) => (
                 <li class="border border-gray-200 p-4 rounded-md bg-gray-50">
-                  <p class="font-semibold text-gray-800">{link.calendar}</p>
+                  <p class="font-semibold text-gray-800">
+                    {link.calendar}
+                    {link.kind === "events" && (
+                      <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                        📅 Agenda
+                      </span>
+                    )}
+                    {link.kind === "tasks" && (
+                      <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">
+                        ✅ Tâches
+                      </span>
+                    )}
+                  </p>
                   <p class="text-sm text-gray-600 mb-2">
-                    {link.count} événement(s)
+                    {link.kind === "tasks"
+                      ? "Liste de tâches : le flux ICS ne reprend que les événements, il restera vide."
+                      : `${link.count} événement(s)`}
                   </p>
                   <div class="flex items-center space-x-2">
                     <input
