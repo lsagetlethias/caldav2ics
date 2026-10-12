@@ -1,5 +1,9 @@
 import { config } from "../config.ts";
-import { fetchCalDAVReport } from "../utils/caldav.ts";
+import {
+  basicAuth,
+  fetchCalDAVReport,
+  fetchDisplayName,
+} from "../utils/caldav.ts";
 import { ensureUid, sanitizeText } from "../utils/ics.ts";
 
 export async function caldavUrl2icsService(url: URL, host: string) {
@@ -9,31 +13,23 @@ export async function caldavUrl2icsService(url: URL, host: string) {
   const end = new Date(now);
   end.setMonth(end.getMonth() + config.untilMonths);
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/xml",
-    Depth: "1",
-  };
-
-  if (url.username && url.password) {
-    const basic = btoa(`${decodeURIComponent(url.username)}:${url.password}`);
-    headers["Authorization"] = `Basic ${basic}`;
-  }
+  const headers: HeadersInit = url.username && url.password
+    ? { Authorization: basicAuth(url) }
+    : {};
 
   url.username = "";
   url.password = "";
 
-  const responses = await fetchCalDAVReport(url, { headers, start, end });
+  const [responses, calendarName] = await Promise.all([
+    fetchCalDAVReport(url, { headers, start, end }),
+    fetchDisplayName(url, headers),
+  ]);
 
   const vevents: string[] = [];
   const eventUIDs = new Set<string>();
   let timezoneBlock = "";
-  let calendarName = "";
 
   for (const r of responses) {
-    if (!calendarName && r.displayName) {
-      calendarName = r.displayName;
-    }
-
     const raw = r.calendarData;
     if (!raw) continue;
 
@@ -85,7 +81,7 @@ export async function caldavUrl2icsService(url: URL, host: string) {
     "VERSION:2.0",
     `PRODID:-//${host}//EN`,
     "CALSCALE:GREGORIAN",
-    `X-WR-CALNAME:${calendarName || "Calendrier"}`,
+    `X-WR-CALNAME:${sanitizeText(calendarName) || "Calendrier"}`,
     "X-WR-TIMEZONE:Europe/Paris",
     "X-PUBLISHED-TTL:PT1M",
     "REFRESH-INTERVAL;VALUE=DURATION:PT1M",

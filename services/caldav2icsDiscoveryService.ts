@@ -1,4 +1,5 @@
 import {
+  basicAuth,
   buildPropfindXml,
   fetchCalDAVReport,
   parseDavXml,
@@ -14,12 +15,6 @@ export interface IcsLink {
   ics: string;
   count: number;
   kind: CalendarKind;
-}
-
-function buildAuthHeaders(username: string, password: string): HeadersInit {
-  const decodedUser = decodeURIComponent(username);
-  const basic = btoa(`${decodedUser}:${password}`);
-  return { Authorization: `Basic ${basic}` };
 }
 
 interface CalendarInfo {
@@ -93,8 +88,8 @@ export async function caldav2icsDiscoveryService(
 ): Promise<IcsLink[]> {
   const parsed = new URL(userURL);
   const baseUrl = `${parsed.protocol}//${parsed.host}`;
-  const headers = parsed.username && parsed.password
-    ? buildAuthHeaders(parsed.username, parsed.password)
+  const headers: HeadersInit = parsed.username && parsed.password
+    ? { Authorization: basicAuth(parsed) }
     : {};
 
   const wellKnownUrl = `${baseUrl}/.well-known/caldav`;

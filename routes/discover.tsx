@@ -30,8 +30,8 @@ export const handler = {
 
     try {
       const url = new URL(caldavUrl);
-      url.username = login;
-      url.password = password;
+      url.username = encodeURIComponent(login);
+      url.password = encodeURIComponent(password);
 
       const icsLinks = await caldav2icsDiscoveryService(
         url,

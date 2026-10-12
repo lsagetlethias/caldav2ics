@@ -34,6 +34,47 @@ export function buildPropfindXml(): string {
 </D:propfind>`;
 }
 
+// L'URL n'encode pas « % » : les identifiants y sont posés via
+// encodeURIComponent. Les slugs plus anciens peuvent contenir un « % » brut,
+// d'où le repli sur la valeur telle quelle.
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+export function basicAuth(url: URL): string {
+  const user = safeDecode(url.username);
+  const pass = safeDecode(url.password);
+  return `Basic ${
+    btoa(String.fromCharCode(...new TextEncoder().encode(`${user}:${pass}`)))
+  }`;
+}
+
+export async function fetchDisplayName(
+  url: string | URL,
+  headers: HeadersInit,
+): Promise<string> {
+  const response = await fetch(url.toString(), {
+    method: "PROPFIND",
+    headers: { ...headers, "Content-Type": "application/xml", Depth: "0" },
+    body:
+      `<D:propfind xmlns:D="DAV:"><D:prop><D:displayname/></D:prop></D:propfind>`,
+  });
+  if (!response.ok) {
+    await response.body?.cancel();
+    return "";
+  }
+  const json = parseDavXml(await response.text());
+  const entry = [json.multistatus?.response].flat()[0];
+  const name = pickProp(entry?.propstat)?.displayname;
+  return typeof name === "object"
+    ? String(name?.["#text"] ?? "")
+    : String(name ?? "");
+}
+
 export class CalDAVError extends Error {
   constructor(readonly status: number) {
     super(`CalDAV REPORT failed (${status})`);
